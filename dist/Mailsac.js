@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const axios_1 = require("axios");
+const axios_proxy_fix_1 = require("axios-proxy-fix");
 class Mailsac {
     constructor(apiKey) {
         this.apiKey = apiKey;
-        this.axios = axios_1.default.create({
+        this.axios = axios_proxy_fix_1.default.create({
             baseURL: "https://mailsac.com/api/",
             headers: { "Mailsac-Key": this.apiKey },
             timeout: 3000,

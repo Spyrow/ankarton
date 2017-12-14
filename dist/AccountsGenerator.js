@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const axios_1 = require("axios");
+const axios_proxy_fix_1 = require("axios-proxy-fix");
 const fs = require("fs");
+const logger = require("winston");
 const Dofus_1 = require("./Dofus");
 const Mailsac_1 = require("./Mailsac");
 const ProxyHelpers_1 = require("./ProxyHelpers");
@@ -16,11 +17,11 @@ class AccountsGenerator {
                 i--;
             }
             else {
-                console.log(`${i + 1} accounts added.`);
+                logger.info(`${i + 1} accounts added.`);
             }
         }
         const diff = process.hrtime(time);
-        console.log(`All accounts added in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds.`);
+        logger.info(`All accounts added in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds.`);
     }
     static async generateWithoutProxy(total, output) {
         const NS_PER_SEC = 1e9;
@@ -30,50 +31,56 @@ class AccountsGenerator {
                 i--;
             }
             else {
-                console.log(`${i + 1} accounts added.`);
+                logger.info(`${i + 1} accounts added.`);
             }
         }
         const diff = process.hrtime(time);
-        console.log(`All accounts added in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds.`);
+        logger.info(`All accounts added in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds.`);
     }
     static generate(output, proxyPath) {
         return new Promise(async (resolve, reject) => {
             const NS_PER_SEC = 1e9;
             const time = process.hrtime();
             let account;
-            if (!proxyPath) {
-                Dofus_1.Dofus.proxy = await ProxyHelpers_1.ProxyHelpers.getValidProxyOnline();
-                account = await Dofus_1.Dofus.createAccount();
+            try {
+                if (!proxyPath) {
+                    account = await Dofus_1.Dofus.createAccount();
+                }
+                else {
+                    account = await Dofus_1.Dofus.createAccount(false);
+                }
             }
-            else {
-                Dofus_1.Dofus.proxy = await ProxyHelpers_1.ProxyHelpers.getValidProxy();
-                account = await Dofus_1.Dofus.createAccount(false);
+            catch (error) {
+                if (error) {
+                    logger.error(error);
+                }
+                return resolve(false);
             }
             if (!account) {
-                console.error("Error while creating account, trying again...");
-                return reject(false);
+                logger.error("Error while creating account, trying again...");
+                return resolve(false);
             }
             await Utils_1.sleep(1000);
             const messages = await this.mailsac.getMessages(account.login + "@mailsac.com");
-            console.log(messages);
+            logger.debug("messages", messages);
             // const mailid = messages.find(m => m.subject === "ANKAMA - Validation de votre compte").Id;
             const message = messages.find((m) => m.subject.includes("Validation"));
             if (!message) {
-                return reject(false);
+                return resolve(false);
             }
             const link = await this.mailsac.getLinkInEmail(`${account.login}@mailsac.com`, message._id);
-            console.log("link1", link);
-            console.log("links", message.links);
-            axios_1.default.get(link)
+            logger.debug("link1", link);
+            logger.debug("links", message.links);
+            axios_proxy_fix_1.default.get(link)
                 .then((response) => {
                 fs.writeFileSync(output, `${account.login}:${account.password}\n`);
                 const diff = process.hrtime(time);
-                console.log(`Account ${account.login} added in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds.`);
+                logger.info(`Account ${account.login} added in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds.`);
                 return resolve(true);
             })
                 .catch((error) => {
-                console.error("Error while activate account...");
-                return reject(false);
+                logger.error("Error while activate account...");
+                return resolve(false);
             });
         });
     }

@@ -1,4 +1,3 @@
-import { IProxy } from "./ProxyHelpers";
 export interface IAccount {
     login: string;
     password: string;
@@ -6,7 +5,7 @@ export interface IAccount {
 export declare class Dofus {
     static createAccount(useOnlineProxy?: boolean): Promise<IAccount>;
     private static axios;
-    static proxy: IProxy;
+    private static proxy;
     private static createGuest();
     private static validateGuest(guestLogin, guestPassword);
 }
