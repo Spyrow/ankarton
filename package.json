@@ -1,0 +1,50 @@
+{
+  "name": "ankarton",
+  "version": "0.0.1",
+  "description": "Ankama account's creator",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "ankarton": "dist/index.js"
+  },
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "node": "node .",
+    "test": "mocha --reporter spec --require ts-node/register 'tests/**/*.test.ts'",
+    "lint": "tslint -p .",
+    "lint:fix": "tslint -p . --fix",
+    "build": "tsc",
+    "prepublishOnly": "yarn lint:fix && yarn test && yarn build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yovanoc/ankarton.git"
+  },
+  "keywords": [
+    "ankarton",
+    "typescript"
+  ],
+  "author": "Christopher Yovanovitch <yovano_c@outlook.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yovanoc/ankarton/issues"
+  },
+  "homepage": "https://github.com/yovanoc/ankarton#readme",
+  "devDependencies": {
+    "@types/chai": "^4.0.10",
+    "@types/mocha": "^2.2.44",
+    "@types/node": "^8.5.1",
+    "@types/winston": "^2.3.7",
+    "chai": "^4.1.2",
+    "mocha": "^4.0.1",
+    "ts-node": "^4.0.1",
+    "tslint": "^5.8.0",
+    "typescript": "^2.6.2"
+  },
+  "dependencies": {
+    "axios": "^0.17.1",
+    "axios-proxy-fix": "^0.16.3",
+    "winston": "^2.4.0",
+    "yargs": "^10.0.3"
+  }
+}
