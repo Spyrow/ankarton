@@ -24,12 +24,18 @@ export class Dofus {
         while (!guest) {
           guest = await this.createGuest();
         }
+
         let account: IAccount;
         while (!account) {
           account = await this.validateGuest(guest.data.login, guest.xpassword);
         }
+
         return resolve(account);
+
       } catch (error) {
+        if (error) {
+          logger.error(error);
+        }
         this.createAccount(useOnlineProxy);
         // return reject(error);
       }
@@ -57,7 +63,15 @@ export class Dofus {
           if (xpassword) {
             logger.debug("xpassword", xpassword);
             return resolve({ data: response.data, xpassword });
+          } else if (response.data.text) {
+            logger.error(response.data.text);
+            return reject();
           } else {
+            const conn = response.headers.connection;
+            if (conn === "close") {
+              logger.error("Blocked by Cloudfront...");
+              return reject();
+            }
             logger.warn("No xpassword found ... retrying");
             return reject();
           }
@@ -69,11 +83,10 @@ export class Dofus {
                 .error(`IP Daily Rate Reached. (${this.axios.defaults.proxy.host}:${this.axios.defaults.proxy.port})`);
               return reject();
             }
-            logger.warn("err", error);
-            logger.error("text", error.response.data.text);
+            logger.error(error.message);
             return reject();
           } else {
-            logger.warn("err2", error);
+            logger.warn(error.message);
             return reject();
           }
         });

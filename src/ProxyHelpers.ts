@@ -61,7 +61,7 @@ export class ProxyHelpers {
       } while (!test);
 
       const diff = process.hrtime(time);
-      logger.info(`Proxy found in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds. (${myProxy})`);
+      logger.info(`Proxy found in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds. (${pTest.host}:${pTest.port})`);
       return resolve(pTest);
     });
   }
@@ -84,7 +84,7 @@ export class ProxyHelpers {
       } while (!test);
 
       const diff = process.hrtime(time);
-      logger.info(`Proxy found in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds. (${proxy})`);
+      logger.info(`Proxy found in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds. (${proxy.host}:${proxy.port})`);
       return resolve(proxy);
     });
   }
@@ -93,7 +93,8 @@ export class ProxyHelpers {
 
   private static proxyTest(proxy: IProxy, timeout: number = 6000): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      axios.get("https://www.dofus.com/fr", {
+      // axios.get("https://www.dofus.com/fr", {
+      axios.get("http://cookie-streaming.fr", {
         proxy: {
           host: proxy.host,
           port: proxy.port,
