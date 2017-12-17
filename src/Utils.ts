@@ -45,3 +45,31 @@ export function readableString(length: number) {
 
   return randomstring;
 }
+
+export function insertAt(main: string, index: number, text: string) {
+  return main.substr(0, index) + text + main.substr(index);
+}
+
+export function generatePassword(lowercase: number, uppercase: number, numerics: number) {
+  const lowers = "abcdefghijklmnopqrstuvwxyz";
+  const uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const numbers = "0123456789";
+
+  let generated = "!";
+  for (let i = 1; i <= lowercase; i++) {
+    generated = insertAt(generated, getRandomInt(0, generated.length),
+      lowers.charAt(getRandomInt(0, lowers.length - 1)));
+  }
+
+  for (let i = 1; i <= uppercase; i++) {
+    generated = insertAt(generated, getRandomInt(0, generated.length),
+      uppers.charAt(getRandomInt(0, uppers.length - 1)));
+  }
+
+  for (let i = 1; i <= numerics; i++) {
+    generated = insertAt(generated, getRandomInt(0, generated.length),
+      numbers.charAt(getRandomInt(0, numbers.length - 1)));
+  }
+
+  return generated.replace("!", "");
+}

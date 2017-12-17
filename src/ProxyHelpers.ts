@@ -26,7 +26,7 @@ export class ProxyHelpers {
       });
 
       rl.on("close", (line) => {
-        logger.info("Initialized proxies: " + this.proxies.length);
+        logger.info(`Initialized ${this.proxies.length} proxies`);
         return resolve();
       });
     });
@@ -44,20 +44,19 @@ export class ProxyHelpers {
         try {
           myProxy = await this.getProxyOnline();
         } catch (err) {
-          logger.error(err.message);
-          return;
+          return reject(err.message);
         }
         const p = myProxy.split(":");
         pTest = {
           host: p[0],
           port: parseInt(p[1], 10),
         };
-        logger.debug(`Testing: ${pTest.host}:${pTest.port} ... `);
+        logger.debug(`Testing: ${pTest.host}:${pTest.port}`, "...");
         test = await this.proxyTest(pTest);
         const CURSOR_UP_ONE = "\x1b[1A";
         const ERASE_LINE = "\x1b[2K";
         process.stdout.write(CURSOR_UP_ONE + ERASE_LINE);
-        logger.debug(`Testing: ${pTest.host}:${pTest.port} ... ${test}`);
+        logger.debug(`Testing: ${pTest.host}:${pTest.port}`,  "...", `${test}`);
       } while (!test);
 
       const diff = process.hrtime(time);
@@ -93,8 +92,7 @@ export class ProxyHelpers {
 
   private static proxyTest(proxy: IProxy, timeout: number = 6000): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      // axios.get("https://www.dofus.com/fr", {
-      axios.get("http://cookie-streaming.fr", {
+      axios.get("https://www.dofus.com/fr", {
         proxy: {
           host: proxy.host,
           port: proxy.port,
@@ -102,25 +100,21 @@ export class ProxyHelpers {
         timeout,
       })
         .then((response) => resolve(true))
-        .catch((error) => {
-          logger.warn(error.message);
-          return resolve(false);
-        });
+        .catch((error) => resolve(false));
     });
   }
 
   private static getProxyOnline(): Promise<string> {
     return new Promise((resolve, reject) => {
+      // axios.get("https://gimmeproxy.com/api/getProxy?protocol=http&supportsHttps=true&country=FR&get=true")
+      //   .then((response) => {
+      //     const proxy = `${response.data.ip}:${response.data.port}`;
+      //     return resolve(proxy);
+      //   })
       axios.get(
-        "http://pubproxy.com/api/proxy?api=cDhCQVlKaGlTWXNlRXpLMmxYOHZDZz09&format=txt&type=http&https=true")
+        "http://pubproxy.com/api/proxy?api=cDhCQVlKaGlTWXNlRXpLMmxYOHZDZz09&type=http")
         .then((response) => {
-          if (response.data === "") { return reject(); }
-          if ((response.data as string).includes("reached") ||
-            (response.data as string).includes("fast")) {
-            return reject(response.data);
-          } else {
-            return resolve(response.data);
-          }
+          return resolve(response.data.data[0].ipPort);
         })
         .catch((error) => reject(error));
     });

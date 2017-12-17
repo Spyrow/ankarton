@@ -2,7 +2,6 @@ import axios from "axios-proxy-fix";
 import * as fs from "fs";
 import * as logger from "winston";
 import { Dofus, IAccount } from "./Dofus";
-import { Mailsac } from "./Mailsac";
 import { ProxyHelpers } from "./ProxyHelpers";
 import { sleep } from "./Utils";
 
@@ -42,14 +41,11 @@ export class AccountsGenerator {
     logger.info(`All accounts added in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds.`);
   }
 
-  private static readonly mailsac = new Mailsac("qfq33y6eckbb7ko40sau1edlsdgav2u5j6drljmne8lc4xsbhv5d7fq4i2qwsv2p");
-
   private static generate(output: string, proxyPath?: string): Promise<boolean> {
     return new Promise(async (resolve, reject) => {
       const NS_PER_SEC = 1e9;
       const time = process.hrtime();
       let account: IAccount;
-
       try {
         if (!proxyPath) {
           account = await Dofus.createAccount();
@@ -57,44 +53,30 @@ export class AccountsGenerator {
           account = await Dofus.createAccount(false);
         }
       } catch (error) {
-        if (error) {
-          logger.error(error);
-        }
-        return resolve(false);
+        return this.generate(output, proxyPath);
       }
+
+      logger.verbose("account 2", account);
 
       if (!account) {
         logger.error("Error while creating account, trying again...");
-        return resolve(false);
+        return this.generate(output, proxyPath);
       }
 
       await sleep(1000);
 
-      const messages = await this.mailsac.getMessages(account.login + "@mailsac.com");
+      logger.verbose("account 3", account);
 
-      logger.debug("messages", messages);
-
-      // const mailid = messages.find(m => m.subject === "ANKAMA - Validation de votre compte").Id;
-      const message = messages.find((m) => m.subject.includes("Validation"));
-      if (!message) {
-        return resolve(false);
+      let result = false;
+      while (!result) {
+        result = await Dofus.activateAccount(account);
       }
 
-      const link = await this.mailsac.getLinkInEmail(`${account.login}@mailsac.com`, message._id);
-      logger.debug("link1", link);
-      logger.debug("links", message.links);
-
-      axios.get(link)
-        .then((response) => {
-          fs.writeFileSync(output, `${account.login}:${account.password}\n`);
-          const diff = process.hrtime(time);
-          logger.info(`Account ${account.login} added in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds.`);
-          return resolve(true);
-        })
-        .catch((error) => {
-          logger.error("Error while activate account...");
-          return resolve(false);
-        });
+      fs.appendFileSync("saved.txt", Dofus.httpsProxy.slice(8));
+      fs.appendFileSync(output, `${account.login}:${account.password}\n`);
+      const diff = process.hrtime(time);
+      logger.info(`Account ${account.login} added in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds.`);
+      return resolve(true);
     });
   }
 }
