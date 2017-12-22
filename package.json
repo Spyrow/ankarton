@@ -1,6 +1,6 @@
 {
   "name": "ankarton",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Ankama account's creator",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,8 +11,8 @@
     "start": "ts-node src/index.ts",
     "node": "node .",
     "test": "mocha --reporter spec --require ts-node/register 'tests/**/*.test.ts'",
-    "lint": "tslint -p .",
-    "lint:fix": "tslint -p . --fix",
+    "lint": "tslint -p . -t stylish",
+    "lint:fix": "tslint -p . -t stylish --fix",
     "build": "tsc",
     "prepublishOnly": "yarn lint:fix && yarn test && yarn build"
   },
@@ -45,7 +45,7 @@
     "axios": "^0.17.1",
     "axios-proxy-fix": "^0.16.3",
     "https-proxy-agent": "^2.1.1",
-    "mailsac": "^0.0.2",
+    "mailsac": "^0.0.8",
     "winston": "^2.4.0",
     "yargs": "^10.0.3"
   }
