@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import * as https from "https";
+import * as HttpsProxyAgent from "https-proxy-agent";
 import * as path from "path";
 import * as logger from "winston";
 import { alias, argv, defaults, demandOption, describe, epilog, usage } from "yargs";
@@ -57,7 +59,23 @@ const start = async () => {
     await AccountsGenerator.generateWithoutProxy(argv.total, argv.out);
   }
 
+  // const agent = new HttpsProxyAgent("http://177.128.157.101:54132");
+  // https.request({
+  //   agent,
+  //   host: "haapi.ankama.com",
+  //   method: "GET",
+  //   path: "/json/Ankama/v2/Account/CreateGuest?game=20&lang=fr",
+  //   port: 443,
+  //   timeout: 10000,
+  // }, (res) => {
+  //   console.log(res.statusCode);
+  //   res.on("data", (data) => {
+  //     console.log(data.toString());
+  //   });
+  // }).end();
+
   logger.info("All accounts were added successfully!");
+  return;
 };
 
 process.on("unhandledRejection", (reason) => {

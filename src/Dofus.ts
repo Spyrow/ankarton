@@ -1,5 +1,4 @@
 import axios, { AxiosInstance } from "axios-proxy-fix";
-import * as fs from "fs";
 import * as https from "https";
 import * as HttpsProxyAgent from "https-proxy-agent";
 import { Client } from "mailsac";
@@ -7,7 +6,7 @@ import * as querystring from "querystring";
 import * as logger from "winston";
 import { Anticaptcha } from "./Anticaptcha";
 import { IProxy, ProxyHelpers } from "./ProxyHelpers";
-import { generatePassword, randomString, readableString } from "./Utils";
+import { generatePassword, randomString, readableString, sleep } from "./Utils";
 
 export interface IAccount {
   login: string;
@@ -31,6 +30,12 @@ export interface IAccount {
     "login_ip": "0.0.0.0"
   }
 */
+
+export interface IGuest {
+  data: ICreateGuestResponse;
+  xpassword: string;
+}
+
 export interface ICreateGuestResponse {
   id: number;
   type: string;
@@ -47,11 +52,17 @@ export interface ICreateGuestResponse {
 
 export class Dofus {
 
-  public static httpsProxy: string;
-
   public static activateAccount(account: IAccount): Promise<boolean> {
     return new Promise(async (resolve, reject) => {
-      const messages = await this.mailsac.getMessages(account.email);
+      logger.info("Step 3/3: ACTIVATION");
+      let messages = [];
+      while (messages.length === 0) {
+        try {
+          messages = await this.mailsac.getMessages(account.email);
+        } catch (e) {
+          logger.error(e);
+        }
+      }
 
       // const mailid = messages.find(m => m.subject === "ANKAMA - Validation de votre compte").Id;
       const message = messages.find((m) => m.subject.includes("Validation"));
@@ -61,76 +72,97 @@ export class Dofus {
 
       const link = message.links.find((m) => m.includes("creer-un-compte"));
 
-      logger.warn("link", link);
-
-      this.axios.get(link)
+      axios.get(link)
         .then((response) => resolve(true))
-        .catch((error) => {
-          logger.error("Error while activate account...");
-          return resolve(false);
-        });
+        .catch((error) => resolve(false));
     });
   }
 
-  public static createAccount(useOnlineProxy: boolean = true): Promise<IAccount> {
-    return new Promise(async (resolve, reject) => {
-      try {
+  // public static createAccount(useOnlineProxy: boolean = true): Promise<IAccount> {
+  //   return new Promise(async (resolve, reject) => {
+  //     try {
+  //
+  //       if (!this.httpsAgent) {
+  //         await this.getProxy(useOnlineProxy);
+  //       }
+  //
+  //       let guest;
+  //       do {
+  //         guest = await this.createGuest();
+  //       } while (!guest);
+  //
+  //       let account: IAccount;
+  //       do {
+  //         account = await this.validateGuest(guest.data.login, guest.xpassword);
+  //       } while (!account);
+  //
+  //       await sleep(1000);
+  //
+  //       let result = false;
+  //       do {
+  //         result = await this.activateAccount(account);
+  //       } while (!result);
+  //
+  //       return resolve(account);
+  //
+  //     } catch (error) {
+  //       if (error) {
+  //         logger.error(error);
+  //       }
+  //       await this.getProxy(useOnlineProxy);
+  //       return this.createAccount(useOnlineProxy);
+  //     }
+  //   });
+  // }
 
-        if (!this.httpsProxy) {
-          if (useOnlineProxy) {
-            this.proxy = await ProxyHelpers.getValidProxyOnline();
-          } else {
-            this.proxy = await ProxyHelpers.getValidProxy();
-          }
-        }
+  public static async createAccount(useOnlineProxy: boolean = true): Promise<IAccount> {
+    try {
 
-        let guest;
-        while (!guest) {
-          guest = await this.createGuest();
-        }
-
-        let account: IAccount;
-        while (!account) {
-          logger.warn("login", guest.data.login);
-          logger.warn("xpassword", guest.xpassword);
-          account = await this.validateGuest(guest.data.login, guest.xpassword);
-        }
-
-        logger.verbose("account 1", account);
-
-        return resolve(account);
-
-      } catch (error) {
-        if (error) {
-          logger.error(error);
-        }
-
-        try {
-          if (useOnlineProxy) {
-            this.proxy = await ProxyHelpers.getValidProxyOnline();
-          } else {
-            this.proxy = await ProxyHelpers.getValidProxy();
-          }
-        } catch (error) {
-          logger.error(error);
-        }
-
-        // return this.createAccount(useOnlineProxy);
-        return reject(error);
+      if (!this.httpsAgent) {
+        await this.getProxy(useOnlineProxy);
       }
-    });
+
+      let guest;
+      do {
+        guest = await this.createGuest();
+      } while (!guest);
+
+      let account: IAccount;
+      do {
+        account = await this.validateGuest(guest.data.login, guest.xpassword);
+      } while (!account);
+
+      await sleep(1000);
+
+      let result = false;
+      do {
+        result = await this.activateAccount(account);
+      } while (!result);
+
+      return account;
+
+    } catch (error) {
+      if (error) {
+        logger.error(error);
+      }
+      await this.getProxy(useOnlineProxy);
+      return this.createAccount(useOnlineProxy);
+    }
   }
 
-  private static axios: AxiosInstance = axios.create({ timeout: 15000 });
+  private static axios: AxiosInstance = axios.create();
+  private static httpsAgent: HttpsProxyAgent;
   private static readonly mailsac = new Client("qfq33y6eckbb7ko40sau1edlsdgav2u5j6drljmne8lc4xsbhv5d7fq4i2qwsv2p");
 
   private static set proxy(proxy: IProxy) {
-    this.httpsProxy = `http://${proxy.host}:${proxy.port}`;
+    this.httpsAgent = new HttpsProxyAgent({
+      host: proxy.host,
+      port: proxy.port,
+      timeout: 10000,
+    });
+    // this.httpsAgent = new HttpsProxyAgent(`http://${proxy.host}:${proxy.port}`);
     this.axios = axios.create({
       headers: {
-        // "Cache-Control": "max-age=0",
-        // "Connection": "keep-alive",
-        // "Upgrade-Insecure-Requests": 1,
         // tslint:disable-next-line
         "User-Agent": "Mozilla/5.0 (Linux; Android 6.0.1; SM-T800 Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.107 Safari/537.36",
       },
@@ -138,8 +170,21 @@ export class Dofus {
         host: proxy.host,
         port: proxy.port,
       },
-      timeout: 15000,
+      timeout: 10000,
     });
+  }
+
+  private static async getProxy(useOnlineProxy: boolean = true) {
+    try {
+      if (useOnlineProxy) {
+        this.proxy = await ProxyHelpers.getValidProxyOnline();
+      } else {
+        this.proxy = await ProxyHelpers.getValidProxy();
+      }
+    } catch (error) {
+      logger.error(error);
+      return this.getProxy(useOnlineProxy);
+    }
   }
 
   private static bypassCaptcha(): Promise<string> {
@@ -169,7 +214,7 @@ export class Dofus {
     });
   }
 
-  private static async createGuest() {
+  private static createGuest(): Promise<IGuest> {
     return new Promise(async (resolve, reject) => {
       // logger.info("Step 1/3: Bypass reCaptcha...");
       // let captcha: string;
@@ -180,96 +225,105 @@ export class Dofus {
       //   return this.createGuest();
       // }
 
-      logger.info("Step 1/2: Create the account...");
+      logger.info("Step 1/3: CREATION");
 
-      // const options = {
-      //   agent: new HttpsProxyAgent(this.httpsProxy),
-      //   host: "haapi.ankama.com",
-      //   path: "/json/Ankama/v2/Account/CreateGuest?game=20&lang=fr",
-      //   timeout: 6000,
-      // };
-      //
-      // const req = https.get(options, (response) => {
-      //   if (response.statusCode === 602) {
-      //     return reject(`IP Daily Rate Reached. (${this.httpsProxy})`);
-      //   } else if (response.statusCode === 503) {
-      //     return reject("503 Service Unavailable");
-      //   }
-      //   let str = "";
-      //   response.on("data", (chunk) => {
-      //     str += chunk.toString();
-      //   });
-      //   response.on("end", () => {
-      //     if (str === "") {
-      //       return reject(response.statusMessage + " (" + response.statusCode + ")");
-      //     } else if (str.startsWith("A")) {
-      //       return reject(str);
-      //     } else if (str.startsWith("H")) {
-      //       return reject("HTTP/1.1 400 Bad Request");
-      //     }
-      //
-      //     const data = JSON.parse(str);
-      //     if (data.text) {
-      //       return reject(data.text);
-      //     }
-      //     const xpassword = response.headers["x-password"];
-      //     logger.verbose("GUEST", { data: data as ICreateGuestResponse, xpassword });
-      //     return resolve({ data: data as ICreateGuestResponse, xpassword });
-      //   });
-      // });
-      //
-      // req.on("error", (e) => {
-      //   return reject(e.message);
-      // });
-      //
-      // req.on("timeout", () => {
+      const req = https.request({
+        agent: this.httpsAgent,
+        host: "haapi.ankama.com",
+        method: "GET",
+        path: "/json/Ankama/v2/Account/CreateGuest?game=20&lang=fr",
+        port: 443,
+      }, (response) => {
+        if (response.statusCode === 602) {
+          return reject(`IP Daily Rate Reached. (${this.axios.defaults.proxy.host}:${this.axios.defaults.proxy.port})`);
+        } else if (response.statusCode === 503) {
+          return reject("503 Service Unavailable");
+        } else if (response.statusCode === 502) {
+          return reject("502 Proxy Error");
+        }
+        let str = "";
+        response.on("data", (chunk) => {
+          str += chunk.toString();
+        });
+        response.on("end", () => {
+          if (str === "") {
+            return reject(response.statusMessage + " (" + response.statusCode + ")");
+          } else if (str.startsWith("A")) {
+            return reject(str);
+          } else if (str.startsWith("H")) {
+            return reject("HTTP/1.1 400 Bad Request");
+          } else if (str.startsWith("<")) {
+            return reject("400 Bad Request");
+          } else if (str.startsWith("Y")) {
+            return reject(str);
+          }
+          const data = JSON.parse(str);
+          if (data.text) {
+            return reject(data.text);
+          }
+          const xpassword = response.headers["x-password"] as string;
+          const dataGuest = data as ICreateGuestResponse;
+          const dataRet: IGuest = {
+            data: dataGuest,
+            xpassword,
+          };
+          return resolve(dataRet);
+        });
+      });
+
+      req.on("error", (e) => {
+        return reject(e.message);
+      });
+
+      // req.setTimeout(10000, () => {
       //   logger.warn("timeout");
       //   req.abort();
       //   return reject();
       // });
 
-      this.axios.get("https://haapi.ankama.com/json/Ankama/v2/Account/CreateGuest", {
-        params: {
-          // "g-recaptcha-response": captcha,
-          game: 20,
-          lang: "fr",
-        },
-      })
-        .then((response) => {
-          fs.writeFileSync("html.txt", response.data);
-          const xpassword = response.headers["x-password"];
-          if (xpassword) {
-            logger.debug("xpassword", xpassword);
-            logger.verbose("Guest", { data: response.data as ICreateGuestResponse, xpassword });
-            return resolve({ data: response.data as ICreateGuestResponse, xpassword });
-          } else if (response.data.text) {
-            return reject(response.data.text);
-          } else {
-            const conn = response.headers.connection;
-            if (conn === "close") {
-              return reject("Blocked by Cloudfront...");
-            } else {
-              return reject("No xpassword found ... retrying");
-            }
-          }
-        })
-        .catch((error) => {
-          if (error.response) {
-            if (error.response.status === 602) {
-              return reject(`IP Daily Rate Reached.` +
-                `(${this.axios.defaults.proxy.host}:${this.axios.defaults.proxy.port})`);
-            }
-          }
-          return reject(error.message);
-        });
+      req.end();
+
+      // this.axios.get("https://haapi.ankama.com/json/Ankama/v2/Account/CreateGuest", {
+      //   params: {
+      //     // "g-recaptcha-response": captcha,
+      //     game: 20,
+      //     lang: "fr",
+      //   },
+      // })
+      //   .then((response) => {
+      //     const xpassword = response.headers["x-password"];
+      //     if (xpassword) {
+      //       logger.debug("xpassword", xpassword);
+      //       logger.verbose("Guest", { data: response.data as ICreateGuestResponse, xpassword });
+      //       return resolve({ data: response.data as ICreateGuestResponse, xpassword });
+      //     } else if (response.data.text) {
+      //       return reject(response.data.text);
+      //     } else {
+      //       const conn = response.headers.connection;
+      //       if (conn === "close") {
+      //         return reject("Blocked by Cloudfront...");
+      //       } else {
+      //         return reject("No xpassword found ... retrying");
+      //       }
+      //     }
+      //   })
+      //   .catch((error) => {
+      //     if (error.response) {
+      //       if (error.response.status === 602) {
+      //         return reject(`IP Daily Rate Reached.` +
+      //           `(${this.axios.defaults.proxy.host}:${this.axios.defaults.proxy.port})`);
+      //       }
+      //     }
+      //     return reject(error.message);
+      //   });
     });
   }
 
   private static validateGuest(guestLogin: string, guestPassword: string): Promise<IAccount> {
     return new Promise((resolve, reject) => {
-      logger.info("Step 2/2: Validate the account...");
+      logger.info("Step 2/3: VALIDATION");
       const readable = readableString(7);
-      const password = generatePassword(3, 4, 3);
+      const password = generatePassword(3, 2, 3);
 
       const params = {
         email: readable + "@mailsac.com",
@@ -277,69 +331,68 @@ export class Dofus {
         guestPassword,
         lang: "fr",
         login: readable,
-        nickname: readable + "nick",
+        nickname: "nick" + readable,
         password,
       };
 
-      // const paramsStr = querystring.stringify(params);
-      //
-      // const options = {
-      //   agent: new HttpsProxyAgent(this.httpsProxy),
-      //   host: "proxyconnection.touch.dofus.com",
-      //   path: "/haapi/validateGuest?" + paramsStr,
-      //   timeout: 6000,
-      // };
-      //
-      // const req = https.get(options, (response) => {
-      //   let str = "";
-      //   response.on("data", (chunk) => {
-      //     str += chunk.toString();
-      //   });
-      //   response.on("end", () => {
-      //     if (str === "") {
-      //       return reject(response.statusMessage + " (" + response.statusCode + ")");
-      //     }
-      //     if (str.includes("BRUTEFORCE")) {
-      //       return reject(`Blacklisted IP By Dofus. (${this.httpsProxy})`);
-      //     }
-      //     if (str.includes("Votre pseudo Ankama est incorrect")) {
-      //       return reject(`Wrong Ankama Nickname. (${params.nickname})`);
-      //     }
-      //
-      //     const data = JSON.parse(str);
-      //     if (data.text) {
-      //       return reject(data.text);
-      //     }
-      //
-      //     logger.verbose("VALIDATE", { login: readable, password, email: params.email, nickname: params.nickname });
-      //     return resolve({ login: readable, password, email: params.email, nickname: params.nickname });
-      //   });
-      // });
-      //
-      // req.on("error", (e) => {
-      //   return reject(e.message);
-      // });
-      //
-      // req.on("timeout", () => {
-      //   logger.warn("timeout");
-      //   req.abort();
-      //   return reject();
-      // });
+      const paramsStr = querystring.stringify(params);
 
-      this.axios.get("https://proxyconnection.touch.dofus.com/haapi/validateGuest", { params })
-        .then((response) => {
-          const str = response.data as string;
+      const req = https.request({
+        agent: this.httpsAgent,
+        host: "proxyconnection.touch.dofus.com",
+        method: "GET",
+        path: "/haapi/validateGuest?" + paramsStr,
+        port: 443,
+      }, (response) => {
+        let str = "";
+        response.on("data", (chunk) => {
+          str += chunk.toString();
+        });
+        response.on("end", () => {
+          if (str === "") {
+            return reject(response.statusMessage + " (" + response.statusCode + ")");
+          }
+          if (str.startsWith("M")) {
+            return reject(str);
+          }
           if (str.includes("BRUTEFORCE")) {
-            return reject("Blacklisted IP By Dofus. "
-              + `(${this.axios.defaults.proxy.host}:${this.axios.defaults.proxy.port}) `);
+            return reject("Blacklisted IP By Dofus." +
+              `(${this.axios.defaults.proxy.host}:${this.axios.defaults.proxy.port}))`);
           }
           if (str.includes("Votre pseudo Ankama est incorrect")) {
-            return reject(`Wrong Ankama Nickname. (${params.nickname}) `);
+            return reject(`Wrong Ankama Nickname. (${params.nickname})`);
           }
-          logger.verbose("validate", response.data);
+
+          const data = JSON.parse(str);
+          if (data.text) {
+            return reject(data.text);
+          }
+
           return resolve({ login: readable, password, email: params.email, nickname: params.nickname });
-        })
-        .catch((error) => reject(error.message));
+        });
+      });
+
+      req.on("error", (e) => {
+        return reject(e.message);
+      });
+
+      req.end();
+
+      // this.axios.get("https://proxyconnection.touch.dofus.com/haapi/validateGuest", { params })
+      //   .then((response) => {
+      //     const str = response.data as string;
+      //     logger.warn(str, typeof str);
+      //     if (str.includes("BRUTEFORCE")) {
+      //       return reject("Blacklisted IP By Dofus. "
+      //         + `(${this.axios.defaults.proxy.host}:${this.axios.defaults.proxy.port}) `);
+      //     }
+      //     if (str.includes("Votre pseudo Ankama est incorrect")) {
+      //       return reject(`Wrong Ankama Nickname. (${params.nickname}) `);
+      //     }
+      //     logger.verbose("validate", response.data);
+      //     return resolve({ login: readable, password, email: params.email, nickname: params.nickname });
+      //   })
+      //   .catch((error) => reject(error.message));
     });
   }
 }

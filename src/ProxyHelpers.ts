@@ -1,5 +1,7 @@
-import axios, { AxiosInstance } from "axios-proxy-fix";
+import axios from "axios-proxy-fix";
 import * as fs from "fs";
+import * as https from "https";
+import * as HttpsProxyAgent from "https-proxy-agent";
 import * as readline from "readline";
 import * as logger from "winston";
 import { getRandomInt } from "./Utils";
@@ -43,7 +45,7 @@ export class ProxyHelpers {
       do {
         try {
           myProxy = await this.getProxyOnline();
-        } catch (err) {
+        } catch (err) {
           return reject(err.message);
         }
         const p = myProxy.split(":");
@@ -90,30 +92,62 @@ export class ProxyHelpers {
 
   private static proxies: IProxy[];
 
-  private static proxyTest(proxy: IProxy, timeout: number = 6000): Promise<boolean> {
+  private static proxyTest(proxy: IProxy, timeout: number = 10000): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      axios.get("https://www.dofus.com/fr", {
-        proxy: {
-          host: proxy.host,
-          port: proxy.port,
-        },
-        timeout,
-      })
-        .then((response) => resolve(true))
-        .catch((error) => resolve(false));
+      // const httpsAgent = new HttpsProxyAgent({
+      //   host: proxy.host,
+      //   port: proxy.port,
+      //   timeout: 10000,
+      // });
+      // const req = https.request({
+      //   agent: httpsAgent,
+      //   host: "ankama.com",
+      //   method: "GET",
+      //   path: "/",
+      //   port: 443,
+      // }, (response) => {
+      //   if (response.statusCode === 200) {
+      //     return resolve(true);
+      //   } else {
+      //     return resolve(false);
+      //   }
+      // });
+      //
+      // req.on("error", (e) => {
+      //   return resolve(false);
+      // });
+      //
+      // req.end();
+
+      return resolve(true);
+
+      // axios.get("https://www.dofus.com/fr", {
+      //   proxy: {
+      //     host: proxy.host,
+      //     port: proxy.port,
+      //   },
+      //   timeout,
+      // })
+      //   .then((response) => resolve(true))
+      //   .catch((error) => resolve(false));
     });
   }
 
   private static getProxyOnline(): Promise<string> {
     return new Promise((resolve, reject) => {
-      // axios.get("https://gimmeproxy.com/api/getProxy?protocol=http&supportsHttps=true&country=FR&get=true")
+      // axios.get("https://gimmeproxy.com/api/getProxy?protocol=http") // &supportsHttps=true
       //   .then((response) => {
       //     const proxy = `${response.data.ip}:${response.data.port}`;
       //     return resolve(proxy);
-      //   })
+      //   });
       axios.get(
-        "http://pubproxy.com/api/proxy?api=cDhCQVlKaGlTWXNlRXpLMmxYOHZDZz09&type=http")
+        "http://pubproxy.com/api/proxy?api=cDhCQVlKaGlTWXNlRXpLMmxYOHZDZz09t&type=http")
         .then((response) => {
+          if (response.data === "No proxy") {
+            return reject({
+              message: "No proxy",
+            });
+          }
           return resolve(response.data.data[0].ipPort);
         })
         .catch((error) => reject(error));

@@ -3,7 +3,6 @@ import * as fs from "fs";
 import * as logger from "winston";
 import { Dofus, IAccount } from "./Dofus";
 import { ProxyHelpers } from "./ProxyHelpers";
-import { sleep } from "./Utils";
 
 export class AccountsGenerator {
 
@@ -46,33 +45,13 @@ export class AccountsGenerator {
       const NS_PER_SEC = 1e9;
       const time = process.hrtime();
       let account: IAccount;
-      try {
-        if (!proxyPath) {
-          account = await Dofus.createAccount();
-        } else {
-          account = await Dofus.createAccount(false);
-        }
-      } catch (error) {
-        return this.generate(output, proxyPath);
+
+      if (!proxyPath) {
+        account = await Dofus.createAccount();
+      } else {
+        account = await Dofus.createAccount(false);
       }
 
-      logger.verbose("account 2", account);
-
-      if (!account) {
-        logger.error("Error while creating account, trying again...");
-        return this.generate(output, proxyPath);
-      }
-
-      await sleep(1000);
-
-      logger.verbose("account 3", account);
-
-      let result = false;
-      while (!result) {
-        result = await Dofus.activateAccount(account);
-      }
-
-      fs.appendFileSync("saved.txt", Dofus.httpsProxy.slice(8));
       fs.appendFileSync(output, `${account.login}:${account.password}\n`);
       const diff = process.hrtime(time);
       logger.info(`Account ${account.login} added in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds.`);
