@@ -36,7 +36,7 @@ logger.configure({
       handleExceptions: true,
       json: false,
       level: "debug",
-      // timestamp: true,
+      timestamp: true,
     }),
   ],
 });
@@ -52,34 +52,33 @@ describe("proxy", "Proxy list (otherwise proxies will be generated but take long
 describe("total", "Number of accounts to be generated");
 epilog("Copyright © 2018 DevChris");
 
+process.on("unhandledRejection", (reason) => {
+  logger.error("Process", reason);
+});
+
+// const agent = new HttpsProxyAgent("http://177.128.157.101:54132");
+// https.request({
+//   agent,
+//   host: "haapi.ankama.com",
+//   method: "GET",
+//   path: "/json/Ankama/v2/Account/CreateGuest?game=20&lang=fr",
+//   port: 443,
+//   timeout: 10000,
+// }, (res) => {
+//   console.log(res.statusCode);
+//   res.on("data", (data) => {
+//     console.log(data.toString());
+//   });
+// }).end();
+
 const start = async () => {
   if (argv.proxy) {
     await AccountsGenerator.generateWithProxy(argv.proxy, argv.total, argv.out);
   } else {
     await AccountsGenerator.generateWithoutProxy(argv.total, argv.out);
   }
-
-  // const agent = new HttpsProxyAgent("http://177.128.157.101:54132");
-  // https.request({
-  //   agent,
-  //   host: "haapi.ankama.com",
-  //   method: "GET",
-  //   path: "/json/Ankama/v2/Account/CreateGuest?game=20&lang=fr",
-  //   port: 443,
-  //   timeout: 10000,
-  // }, (res) => {
-  //   console.log(res.statusCode);
-  //   res.on("data", (data) => {
-  //     console.log(data.toString());
-  //   });
-  // }).end();
-
   logger.info("All accounts were added successfully!");
-  return;
+  process.exit();
 };
-
-process.on("unhandledRejection", (reason) => {
-  logger.error("Process", reason);
-});
 
 start();

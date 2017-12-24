@@ -15,6 +15,11 @@ export interface IAccount {
   nickname: string;
 }
 
+export interface IGuest {
+  data: ICreateGuestResponse;
+  xpassword: string;
+}
+
 /*
   {
     "id": 122674823,
@@ -30,11 +35,6 @@ export interface IAccount {
     "login_ip": "0.0.0.0"
   }
 */
-
-export interface IGuest {
-  data: ICreateGuestResponse;
-  xpassword: string;
-}
 
 export interface ICreateGuestResponse {
   id: number;
@@ -208,7 +208,6 @@ export class Dofus {
           return process.exit();
         }
       } catch (error) {
-        // logger.verbose("Anticaptcha Error", error);
         return reject(error);
       }
     });
@@ -255,6 +254,8 @@ export class Dofus {
           } else if (str.startsWith("<")) {
             return reject("400 Bad Request");
           } else if (str.startsWith("Y")) {
+            return reject(str);
+          } else if (str.startsWith("P")) {
             return reject(str);
           }
           const data = JSON.parse(str);
@@ -322,7 +323,7 @@ export class Dofus {
   private static validateGuest(guestLogin: string, guestPassword: string): Promise<IAccount> {
     return new Promise((resolve, reject) => {
       logger.info("Step 2/3: VALIDATION");
-      const readable = readableString(7);
+      const readable = readableString(8);
       const password = generatePassword(3, 2, 3);
 
       const params = {
@@ -331,7 +332,7 @@ export class Dofus {
         guestPassword,
         lang: "fr",
         login: readable,
-        nickname: "nick" + readable,
+        nickname: readable + "nick",
         password,
       };
 
@@ -355,6 +356,11 @@ export class Dofus {
           if (str.startsWith("M")) {
             return reject(str);
           }
+
+          if (str.startsWith("<")) {
+            return reject("400 Bad Request");
+          }
+
           if (str.includes("BRUTEFORCE")) {
             return reject("Blacklisted IP By Dofus." +
               `(${this.axios.defaults.proxy.host}:${this.axios.defaults.proxy.port}))`);
@@ -368,7 +374,7 @@ export class Dofus {
             return reject(data.text);
           }
 
-          return resolve({ login: readable, password, email: params.email, nickname: params.nickname });
+          return resolve({ login: readable, password, email: params.email, nickname: params.nickname } as IAccount);
         });
       });
 

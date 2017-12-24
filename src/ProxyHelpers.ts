@@ -53,12 +53,12 @@ export class ProxyHelpers {
           host: p[0],
           port: parseInt(p[1], 10),
         };
-        logger.debug(`Testing: ${pTest.host}:${pTest.port}`, "...");
+        logger.debug(`Testing proxy: ${pTest.host}:${pTest.port}`, "...");
         test = await this.proxyTest(pTest);
-        const CURSOR_UP_ONE = "\x1b[1A";
-        const ERASE_LINE = "\x1b[2K";
-        process.stdout.write(CURSOR_UP_ONE + ERASE_LINE);
-        logger.debug(`Testing: ${pTest.host}:${pTest.port}`,  "...", `${test}`);
+        // const CURSOR_UP_ONE = "\x1b[1A";
+        // const ERASE_LINE = "\x1b[2K";
+        // process.stdout.write(CURSOR_UP_ONE + ERASE_LINE);
+        // logger.debug(`Testing: ${pTest.host}:${pTest.port}`,  "...", `${test}`);
       } while (!test);
 
       const diff = process.hrtime(time);
@@ -75,13 +75,13 @@ export class ProxyHelpers {
       let proxy: IProxy;
       let test = false;
       do {
-        proxy = await this.getProxy();
-        logger.debug(`Testing: ${proxy.host}:${proxy.port} ... `);
+        proxy = this.getProxy();
+        logger.debug(`Testing proxy: http://${proxy.host}:${proxy.port}`);
         test = await this.proxyTest(proxy);
-        const CURSOR_UP_ONE = "\x1b[1A";
-        const ERASE_LINE = "\x1b[2K";
-        process.stdout.write(CURSOR_UP_ONE + ERASE_LINE);
-        logger.debug(`Testing: ${proxy.host}:${proxy.port} ... ${test}`);
+        // const CURSOR_UP_ONE = "\x1b[1A";
+        // const ERASE_LINE = "\x1b[2K";
+        // process.stdout.write(CURSOR_UP_ONE + ERASE_LINE);
+        // logger.debug(`Testing: ${proxy.host}:${proxy.port} ... ${test}`);
       } while (!test);
 
       const diff = process.hrtime(time);
@@ -141,7 +141,7 @@ export class ProxyHelpers {
       //     return resolve(proxy);
       //   });
       axios.get(
-        "http://pubproxy.com/api/proxy?api=cDhCQVlKaGlTWXNlRXpLMmxYOHZDZz09t&type=http")
+        "http://pubproxy.com/api/proxy?api=cDhCQVlKaGlTWXNlRXpLMmxYOHZDZz09&type=http")
         .then((response) => {
           if (response.data === "No proxy") {
             return reject({
@@ -154,10 +154,8 @@ export class ProxyHelpers {
     });
   }
 
-  private static getProxy(): Promise<IProxy> {
-    return new Promise((resolve, reject) => {
-      const num = getRandomInt(0, this.proxies.length - 1);
-      return resolve(this.proxies[num]);
-    });
+  private static getProxy(): IProxy {
+    const num = getRandomInt(0, this.proxies.length - 1);
+    return this.proxies[num];
   }
 }
