@@ -26,7 +26,6 @@ describe("AccountsGenerator", () => {
       passwordGenerator: (guestLogin: string, guestPassword: string): string => {
         return "genpas246";
       },
-      proxy: { host: "", port: 4201 },
     }).then(() => {/**/});
   });
 
