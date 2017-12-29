@@ -4,6 +4,7 @@ import * as HttpsProxyAgent from "https-proxy-agent";
 import { Client } from "mailsac";
 import * as querystring from "querystring";
 import * as logger from "winston";
+import AnkartonConfig from "./AnkartonConfig";
 import { Anticaptcha } from "./Anticaptcha";
 import { IProxy, ProxyHelpers } from "./ProxyHelpers";
 import { generatePassword, randomString, readableString, sleep } from "./Utils";
@@ -20,22 +21,6 @@ export interface IGuest {
   xpassword: string;
 }
 
-/*
-  {
-    "id": 122674823,
-    "type": "GUEST",
-    "login": "[GUEST]efb929ba5bf67999",
-    "nickname": null,
-    "security": [],
-    "lang": "fr",
-    "community": "COMMUNITY_0",
-    "added_date": "2017-12-16T10:40:05+01:00",
-    "added_ip": "78.242.102.121",
-    "login_date": null,
-    "login_ip": "0.0.0.0"
-  }
-*/
-
 export interface ICreateGuestResponse {
   id: number;
   type: string;
@@ -51,7 +36,6 @@ export interface ICreateGuestResponse {
 }
 
 export class Dofus {
-
   public static activateAccount(account: IAccount): Promise<boolean> {
     return new Promise(async (resolve, reject) => {
       logger.info("Step 3/3: ACTIVATION");
@@ -78,48 +62,11 @@ export class Dofus {
     });
   }
 
-  // public static createAccount(useOnlineProxy: boolean = true): Promise<IAccount> {
-  //   return new Promise(async (resolve, reject) => {
-  //     try {
-  //
-  //       if (!this.httpsAgent) {
-  //         await this.getProxy(useOnlineProxy);
-  //       }
-  //
-  //       let guest;
-  //       do {
-  //         guest = await this.createGuest();
-  //       } while (!guest);
-  //
-  //       let account: IAccount;
-  //       do {
-  //         account = await this.validateGuest(guest.data.login, guest.xpassword);
-  //       } while (!account);
-  //
-  //       await sleep(1000);
-  //
-  //       let result = false;
-  //       do {
-  //         result = await this.activateAccount(account);
-  //       } while (!result);
-  //
-  //       return resolve(account);
-  //
-  //     } catch (error) {
-  //       if (error) {
-  //         logger.error(error);
-  //       }
-  //       await this.getProxy(useOnlineProxy);
-  //       return this.createAccount(useOnlineProxy);
-  //     }
-  //   });
-  // }
-
-  public static async createAccount(useOnlineProxy: boolean = true): Promise<IAccount> {
+  public static async createAccount(config: AnkartonConfig): Promise<IAccount> {
     try {
 
       if (!this.httpsAgent) {
-        await this.getProxy(useOnlineProxy);
+        await this.getProxy(config);
       }
 
       let guest;
@@ -129,7 +76,7 @@ export class Dofus {
 
       let account: IAccount;
       do {
-        account = await this.validateGuest(guest.data.login, guest.xpassword);
+        account = await this.validateGuest(config, guest.data.login, guest.xpassword);
       } while (!account);
 
       await sleep(1000);
@@ -145,8 +92,8 @@ export class Dofus {
       if (error) {
         logger.error(error);
       }
-      await this.getProxy(useOnlineProxy);
-      return this.createAccount(useOnlineProxy);
+      await this.getProxy(config);
+      return this.createAccount(config);
     }
   }
 
@@ -174,16 +121,18 @@ export class Dofus {
     });
   }
 
-  private static async getProxy(useOnlineProxy: boolean = true) {
+  private static async getProxy(config: AnkartonConfig) {
     try {
-      if (useOnlineProxy) {
+      if (config.useOnlineProxy) {
         this.proxy = await ProxyHelpers.getValidProxyOnline();
-      } else {
+      } else if (config.hasProxyFile) {
         this.proxy = await ProxyHelpers.getValidProxy();
+      } else if (config.hasProxyValue) {
+        this.proxy = config.proxyValue;
       }
     } catch (error) {
       logger.error(error);
-      return this.getProxy(useOnlineProxy);
+      return this.getProxy(config);
     }
   }
 
@@ -276,55 +225,20 @@ export class Dofus {
         return reject(e.message);
       });
 
-      // req.setTimeout(10000, () => {
-      //   logger.warn("timeout");
-      //   req.abort();
-      //   return reject();
-      // });
-
       req.end();
-
-      // this.axios.get("https://haapi.ankama.com/json/Ankama/v2/Account/CreateGuest", {
-      //   params: {
-      //     // "g-recaptcha-response": captcha,
-      //     game: 20,
-      //     lang: "fr",
-      //   },
-      // })
-      //   .then((response) => {
-      //     const xpassword = response.headers["x-password"];
-      //     if (xpassword) {
-      //       logger.debug("xpassword", xpassword);
-      //       logger.verbose("Guest", { data: response.data as ICreateGuestResponse, xpassword });
-      //       return resolve({ data: response.data as ICreateGuestResponse, xpassword });
-      //     } else if (response.data.text) {
-      //       return reject(response.data.text);
-      //     } else {
-      //       const conn = response.headers.connection;
-      //       if (conn === "close") {
-      //         return reject("Blocked by Cloudfront...");
-      //       } else {
-      //         return reject("No xpassword found ... retrying");
-      //       }
-      //     }
-      //   })
-      //   .catch((error) => {
-      //     if (error.response) {
-      //       if (error.response.status === 602) {
-      //         return reject(`IP Daily Rate Reached.` +
-      //           `(${this.axios.defaults.proxy.host}:${this.axios.defaults.proxy.port})`);
-      //       }
-      //     }
-      //     return reject(error.message);
-      //   });
     });
   }
 
-  private static validateGuest(guestLogin: string, guestPassword: string): Promise<IAccount> {
+  private static validateGuest(config: AnkartonConfig, guestLogin: string, guestPassword: string): Promise<IAccount> {
     return new Promise((resolve, reject) => {
       logger.info("Step 2/3: VALIDATION");
       const readable = readableString(8);
-      const password = generatePassword(3, 2, 3);
+      let password: string;
+      if (config.hasPasswordGenerator) {
+        password = config.passwordGenerator(guestLogin, guestPassword);
+      } else {
+        password = generatePassword(3, 2, 3);
+      }
 
       const params = {
         email: readable + "@mailsac.com",
@@ -383,22 +297,6 @@ export class Dofus {
       });
 
       req.end();
-
-      // this.axios.get("https://proxyconnection.touch.dofus.com/haapi/validateGuest", { params })
-      //   .then((response) => {
-      //     const str = response.data as string;
-      //     logger.warn(str, typeof str);
-      //     if (str.includes("BRUTEFORCE")) {
-      //       return reject("Blacklisted IP By Dofus. "
-      //         + `(${this.axios.defaults.proxy.host}:${this.axios.defaults.proxy.port}) `);
-      //     }
-      //     if (str.includes("Votre pseudo Ankama est incorrect")) {
-      //       return reject(`Wrong Ankama Nickname. (${params.nickname}) `);
-      //     }
-      //     logger.verbose("validate", response.data);
-      //     return resolve({ login: readable, password, email: params.email, nickname: params.nickname });
-      //   })
-      //   .catch((error) => reject(error.message));
     });
   }
 }
