@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { AccountsGenerator } from "./AccountsGenerator";
 import AnkartonConfig from "./AnkartonConfig";
 

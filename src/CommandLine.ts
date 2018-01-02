@@ -57,4 +57,4 @@ export default class CommandLine {
   }
 }
 
-CommandLine.start()
+CommandLine.start();
