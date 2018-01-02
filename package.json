@@ -5,7 +5,7 @@
   "main": "dist/Library.js",
   "types": "dist/Library.d.ts",
   "bin": {
-    "ankarton": "dist/StartDefault.js"
+    "ankarton": "dist/CommandLine.js"
   },
   "scripts": {
     "start": "ts-node src/CommandLine.ts",
