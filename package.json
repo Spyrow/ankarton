@@ -25,6 +25,9 @@
     "typescript"
   ],
   "author": "Christopher Yovanovitch <yovano_c@outlook.com>",
+  "contributors": [
+    "Jordan DE GEA <jordan.degea@gmail.com>"
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/yovanoc/ankarton/issues"

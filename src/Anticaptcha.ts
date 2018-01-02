@@ -78,7 +78,7 @@ export class Anticaptcha {
   }
 
   public getTaskSolution(taskId: string, currentAttempt = 0,
-                         tickCb?: (response: ITaskResponse) => any): Promise<ITaskResponse> {
+    tickCb?: (response: ITaskResponse) => any): Promise<ITaskResponse> {
     return new Promise(async (resolve, reject) => {
       const postData = {
         clientKey: this.clientKey,
@@ -122,7 +122,7 @@ export class Anticaptcha {
 
   public async createTask(type = IOptionType.NoCaptchaTask, taskData?: any) {
     const taskPostData = this.getPostData(type);
-    Object.assign(taskPostData, { type });
+    Object.assign(taskPostData, {  type });
 
     // Merge incoming and already fetched taskData, incoming data has priority
     if (typeof taskData === "object") {
@@ -195,7 +195,7 @@ export class Anticaptcha {
       axios(options).then((response) => {
         const jsonResult = response.data;
         if (jsonResult.errorId) {
-          return reject({ code: jsonResult.errorCode, error: jsonResult.errorDescription});
+          return reject({ code: jsonResult.errorCode, error: jsonResult.errorDescription });
         }
         return resolve(jsonResult);
       }).catch((e) => reject(e));

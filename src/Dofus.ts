@@ -59,7 +59,7 @@ export class Dofus {
         agent: this.httpsAgent,
         method: "GET",
         path: link,
-        port: 443
+        port: 443,
       }, (response) => {
         return resolve(true);
       });
