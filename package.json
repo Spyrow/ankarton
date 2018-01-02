@@ -1,6 +1,6 @@
 {
   "name": "ankarton",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Ankama account's creator",
   "main": "dist/Library.js",
   "types": "dist/Library.d.ts",
