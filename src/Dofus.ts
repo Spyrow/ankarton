@@ -1,4 +1,3 @@
-import axios, { AxiosInstance } from "axios-proxy-fix";
 import * as https from "https";
 import * as HttpsProxyAgent from "https-proxy-agent";
 import { Client } from "mailsac";
@@ -56,9 +55,20 @@ export class Dofus {
 
       const link = message.links.find((m) => m.includes("creer-un-compte"));
 
-      axios.get(link)
-        .then((response) => resolve(true))
-        .catch((error) => resolve(false));
+      const req = https.request({
+        agent: this.httpsAgent,
+        method: "GET",
+        path: link,
+        port: 443
+      }, (response) => {
+        return resolve(true);
+      });
+
+      req.on("error", (e) => {
+        return resolve(false);
+      });
+
+      req.end();
     });
   }
 
@@ -97,7 +107,6 @@ export class Dofus {
     }
   }
 
-  private static axios: AxiosInstance = axios.create();
   private static httpsAgent: HttpsProxyAgent;
   private static readonly mailsac = new Client("qfq33y6eckbb7ko40sau1edlsdgav2u5j6drljmne8lc4xsbhv5d7fq4i2qwsv2p");
 
@@ -105,18 +114,6 @@ export class Dofus {
     this.httpsAgent = new HttpsProxyAgent({
       host: proxy.host,
       port: proxy.port,
-      timeout: 10000,
-    });
-    // this.httpsAgent = new HttpsProxyAgent(`http://${proxy.host}:${proxy.port}`);
-    this.axios = axios.create({
-      headers: {
-        // tslint:disable-next-line
-        "User-Agent": "Mozilla/5.0 (Linux; Android 6.0.1; SM-T800 Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.107 Safari/537.36",
-      },
-      proxy: {
-        host: proxy.host,
-        port: proxy.port,
-      },
       timeout: 10000,
     });
   }
@@ -183,7 +180,7 @@ export class Dofus {
         port: 443,
       }, (response) => {
         if (response.statusCode === 602) {
-          return reject(`IP Daily Rate Reached. (${this.axios.defaults.proxy.host}:${this.axios.defaults.proxy.port})`);
+          return reject(`IP Daily Rate Reached. (${this.httpsAgent.host}:${this.httpsAgent.port})`);
         } else if (response.statusCode === 503) {
           return reject("503 Service Unavailable");
         } else if (response.statusCode === 502) {
@@ -277,7 +274,7 @@ export class Dofus {
 
           if (str.includes("BRUTEFORCE")) {
             return reject("Blacklisted IP By Dofus." +
-              `(${this.axios.defaults.proxy.host}:${this.axios.defaults.proxy.port}))`);
+              `(${this.httpsAgent.host}:${this.httpsAgent.port}))`);
           }
           if (str.includes("Votre pseudo Ankama est incorrect")) {
             return reject(`Wrong Ankama Nickname. (${params.nickname})`);
