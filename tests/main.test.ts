@@ -1,6 +1,6 @@
 import * as chai from "chai";
 import * as mocha from "mocha";
-import Ankarton from "../dist/index";
+import Ankarton from "../../ankarton";
 
 const expect = chai.expect;
 

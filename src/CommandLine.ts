@@ -8,25 +8,7 @@ import { alias, argv, defaults, demandOption, describe, epilog, usage } from "ya
 import { AccountsGenerator } from "./AccountsGenerator";
 import AnkartonConfig from "./AnkartonConfig";
 
-export default class StartDefault {
-
-  public static isImported() {
-    let imported = true;
-    if (process.argv[1].endsWith("ankarton")) {
-      // Used as global ankarton
-      imported = false;
-    } else if (process.argv[1].endsWith("ankarton/src/index.ts")) {
-      imported = false;
-    }
-    return imported;
-  }
-
-  public static startIfNotImported() {
-    if (StartDefault.isImported()) {
-      return;
-    }
-    return StartDefault.start();
-  }
+export default class CommandLine {
 
   public static start() {
     logger.configure({
@@ -74,3 +56,5 @@ export default class StartDefault {
     return start();
   }
 }
+
+CommandLine.start()
