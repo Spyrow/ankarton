@@ -2,7 +2,6 @@
 
 import { AccountsGenerator } from "./AccountsGenerator";
 import AnkartonConfig from "./AnkartonConfig";
-import StartDefault from "./StartDefault";
 
 export default class Ankarton {
   public static async generate(params: any) {
@@ -13,5 +12,3 @@ export default class Ankarton {
     return await AccountsGenerator.generate(config);
   }
 }
-
-StartDefault.startIfNotImported();

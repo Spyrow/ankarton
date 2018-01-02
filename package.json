@@ -1,14 +1,14 @@
 {
   "name": "ankarton",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Ankama account's creator",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/Library.js",
+  "types": "dist/Library.d.ts",
   "bin": {
-    "ankarton": "dist/index.js"
+    "ankarton": "dist/StartDefault.js"
   },
   "scripts": {
-    "start": "ts-node src/index.ts",
+    "start": "ts-node src/CommandLine.ts",
     "node": "node .",
     "test": "mocha --reporter spec --require ts-node/register 'tests/**/*.test.ts' --timeout 300000",
     "lint": "tslint -p . -t stylish",
