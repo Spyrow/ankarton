@@ -1,4 +1,5 @@
 
+import * as logger from "winston";
 import { IProxy } from "./ProxyHelpers";
 
 export default class AnkartonConfig {
@@ -9,6 +10,9 @@ export default class AnkartonConfig {
   private dOutput: ((err: any, data: any) => void) | string;
   private dUseOnlineProxy: boolean;
   private dPasswordGenerator: (guestLogin: string, guestPassword: string) => string;
+  private dLogger: any;
+  private dDelayOnDailyRateReached: number;
+  private dDelayOnECONNREFUSED: number;
 
   constructor(config: any) {
     if (typeof config !== "object") {
@@ -36,6 +40,15 @@ export default class AnkartonConfig {
     if (config.hasOwnProperty("passwordGenerator")) {
       this.dPasswordGenerator = config.passwordGenerator;
     }
+    if (config.hasOwnProperty("logger")) {
+      this.dLogger = config.logger;
+    }
+    if (config.hasOwnProperty("delayOnDailyRateReached")) {
+      this.dDelayOnDailyRateReached = config.dDelayOnDailyRateReached;
+    }
+    if (config.hasOwnProperty("delayOnECONNREFUSED")) {
+      this.dDelayOnECONNREFUSED = config.delayOnECONNREFUSED;
+    }
   }
 
   private setDefault() {
@@ -45,6 +58,9 @@ export default class AnkartonConfig {
     this.dTotal = 1;
     this.dOutput = "accounts.txt";
     this.dPasswordGenerator = null;
+    this.dLogger = logger;
+    this.dDelayOnDailyRateReached = 1;
+    this.dDelayOnECONNREFUSED = 100;
   }
 
   public get passwordGenerator(): (guestLogin: string, guestPassword: string) => string {
@@ -135,5 +151,17 @@ export default class AnkartonConfig {
 
   public get useOnlineProxy(): boolean {
     return this.dUseOnlineProxy;
+  }
+
+  public get logger(): any {
+    return this.dLogger;
+  }
+
+  public get delayOnDailyRateReached(): number {
+    return this.dDelayOnDailyRateReached;
+  }
+
+  public get delayOnECONNREFUSED(): number {
+    return this.dDelayOnECONNREFUSED;
   }
 }
