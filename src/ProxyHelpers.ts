@@ -3,7 +3,6 @@ import * as fs from "fs";
 import * as https from "https";
 import * as HttpsProxyAgent from "https-proxy-agent";
 import * as readline from "readline";
-import * as logger from "winston";
 import { getRandomInt } from "./Utils";
 
 export interface IProxy {
@@ -13,7 +12,7 @@ export interface IProxy {
 
 export class ProxyHelpers {
 
-  public static async initProxies(inputFile: string = "data/proxy.txt") {
+  public static async initProxies(inputFile: string = "data/proxy.txt", logger?: any) {
     return new Promise((resolve, reject) => {
       this.proxies = [];
       const instream = fs.createReadStream(inputFile);
@@ -28,15 +27,19 @@ export class ProxyHelpers {
       });
 
       rl.on("close", (line) => {
-        logger.info(`Initialized ${this.proxies.length} proxies`);
+        if (logger !== undefined) {
+          logger.info(`Initialized ${this.proxies.length} proxies`);
+        }
         return resolve();
       });
     });
   }
 
-  public static getValidProxyOnline(): Promise<IProxy> {
+  public static getValidProxyOnline(logger?: any): Promise<IProxy> {
     return new Promise(async (resolve, reject) => {
-      logger.info("Starting to search a valid proxy online ...");
+      if (logger !== undefined) {
+        logger.info("Starting to search a valid proxy online ...");
+      }
       const NS_PER_SEC = 1e9;
       const time = process.hrtime();
       let myProxy: string;
@@ -53,7 +56,9 @@ export class ProxyHelpers {
           host: p[0],
           port: parseInt(p[1], 10),
         };
-        logger.debug(`Testing proxy: ${pTest.host}:${pTest.port}`, "...");
+        if (logger !== undefined) {
+          logger.debug(`Testing proxy: ${pTest.host}:${pTest.port}`, "...");
+        }
         test = await this.proxyTest(pTest);
         // const CURSOR_UP_ONE = "\x1b[1A";
         // const ERASE_LINE = "\x1b[2K";
@@ -62,21 +67,27 @@ export class ProxyHelpers {
       } while (!test);
 
       const diff = process.hrtime(time);
-      logger.info(`Proxy found in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds. (${pTest.host}:${pTest.port})`);
+      if (logger !== undefined) {
+        logger.info(`Proxy found in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds. (${pTest.host}:${pTest.port})`);
+      }
       return resolve(pTest);
     });
   }
 
-  public static getValidProxy(): Promise<IProxy> {
+  public static getValidProxy(logger?: any): Promise<IProxy> {
     return new Promise(async (resolve, reject) => {
-      logger.info("Starting to search a valid proxy ...");
+      if (logger !== undefined) {
+        logger.info("Starting to search a valid proxy ...");
+      }
       const NS_PER_SEC = 1e9;
       const time = process.hrtime();
       let proxy: IProxy;
       let test = false;
       do {
         proxy = this.getProxy();
-        logger.debug(`Testing proxy: http://${proxy.host}:${proxy.port}`);
+        if (logger !== undefined) {
+          logger.debug(`Testing proxy: http://${proxy.host}:${proxy.port}`);
+        }
         test = await this.proxyTest(proxy);
         // const CURSOR_UP_ONE = "\x1b[1A";
         // const ERASE_LINE = "\x1b[2K";
@@ -85,7 +96,9 @@ export class ProxyHelpers {
       } while (!test);
 
       const diff = process.hrtime(time);
-      logger.info(`Proxy found in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds. (${proxy.host}:${proxy.port})`);
+      if (logger !== undefined) {
+        logger.info(`Proxy found in ${diff[0] * NS_PER_SEC + diff[1]} nanoseconds. (${proxy.host}:${proxy.port})`);
+      }
       return resolve(proxy);
     });
   }

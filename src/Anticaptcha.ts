@@ -1,5 +1,4 @@
 import axios from "axios";
-import * as logger from "winston";
 import { sleep } from "./Utils";
 
 const connectionTimeout = 20;
@@ -34,6 +33,7 @@ export interface ITaskResponse {
 
 export class Anticaptcha {
   public clientKey: string;
+  public logger: any;
   public url = "https://api.anti-captcha.com/";
 
   // reCAPTCHA 2
@@ -60,8 +60,9 @@ export class Anticaptcha {
   public languagePool = null;
   public softId = null;
 
-  constructor(clientKey: string) {
+  constructor(clientKey: string, logger?: any) {
     this.clientKey = clientKey;
+    this.logger = logger;
   }
 
   public getBalance(): Promise<number> {
@@ -78,7 +79,7 @@ export class Anticaptcha {
   }
 
   public getTaskSolution(taskId: string, currentAttempt = 0,
-    tickCb?: (response: ITaskResponse) => any): Promise<ITaskResponse> {
+                         tickCb?: (response: ITaskResponse) => any): Promise<ITaskResponse> {
     return new Promise(async (resolve, reject) => {
       const postData = {
         clientKey: this.clientKey,
@@ -90,8 +91,9 @@ export class Anticaptcha {
       } else {
         waitingInterval = normalWaitingInterval;
       }
-
-      logger.info(`Waiting ${waitingInterval} seconds`);
+      if (this.logger !== undefined) {
+        this.logger.info(`Waiting ${waitingInterval} seconds`);
+      }
       await sleep(waitingInterval * 1000);
 
       try {
@@ -103,7 +105,9 @@ export class Anticaptcha {
           }
           return this.getTaskSolution(taskId, currentAttempt + 1, tickCb);
         } else if (res.status === TaskStatus.READY) {
-          logger.verbose("getTaskResult", res as ITaskResponse);
+          if (this.logger !== undefined) {
+            this.logger.verbose("getTaskResult", res as ITaskResponse);
+          }
           return resolve(res as ITaskResponse);
         }
       } catch (error) {
@@ -122,7 +126,7 @@ export class Anticaptcha {
 
   public async createTask(type = IOptionType.NoCaptchaTask, taskData?: any) {
     const taskPostData = this.getPostData(type);
-    Object.assign(taskPostData, {  type });
+    Object.assign(taskPostData, { type });
 
     // Merge incoming and already fetched taskData, incoming data has priority
     if (typeof taskData === "object") {

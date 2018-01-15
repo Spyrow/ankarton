@@ -42,6 +42,7 @@ export default class CommandLine {
 
     const start = async () => {
       const config: AnkartonConfig = new AnkartonConfig({
+        logger,
         output: argv.out,
         total: argv.total,
       });
@@ -49,7 +50,7 @@ export default class CommandLine {
         config.proxyPath = argv.proxy;
       }
       await AccountsGenerator.generate(config);
-      logger.info("All accounts were added successfully!");
+      config.logger.info("All accounts were added successfully!");
       process.exit();
     };
 
