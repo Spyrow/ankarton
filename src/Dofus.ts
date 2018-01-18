@@ -57,8 +57,9 @@ export class Dofus {
 
       const req = https.request({
         agent: this.httpsAgent,
+        host: "account.ankama.com",
         method: "GET",
-        path: link,
+        path: link.substring(26),
         port: 443,
       }, (response) => {
         return resolve(true);
@@ -69,6 +70,7 @@ export class Dofus {
       });
 
       req.end();
+
     });
   }
 
@@ -238,10 +240,13 @@ export class Dofus {
   private static validateGuest(config: AnkartonConfig, guestLogin: string, guestPassword: string): Promise<IAccount> {
     return new Promise((resolve, reject) => {
       config.logger.info("Step 2/3: VALIDATION");
-      const readable = readableString(8);
+      let readable = readableString(8);
       let password: string;
+      if (config.hasLoginGenerator) {
+        readable = config.loginGenerator(readable);
+      }
       if (config.hasPasswordGenerator) {
-        password = config.passwordGenerator(guestLogin, guestPassword);
+        password = config.passwordGenerator();
       } else {
         password = generatePassword(3, 2, 3);
       }

@@ -9,7 +9,8 @@ export default class AnkartonConfig {
   private dTotal: number;
   private dOutput: ((err: any, data: any) => void) | string;
   private dUseOnlineProxy: boolean;
-  private dPasswordGenerator: (guestLogin: string, guestPassword: string) => string;
+  private dPasswordGenerator: () => string;
+  private dLoginGenerator: (generatedLogin: string) => string;
   private dLogger: any;
   private dDelayOnDailyRateReached: number;
   private dDelayOnECONNREFUSED: number;
@@ -40,6 +41,9 @@ export default class AnkartonConfig {
     if (config.hasOwnProperty("passwordGenerator")) {
       this.dPasswordGenerator = config.passwordGenerator;
     }
+    if (config.hasOwnProperty("loginGenerator")) {
+      this.dLoginGenerator = config.loginGenerator;
+    }
     if (config.hasOwnProperty("logger")) {
       this.dLogger = config.logger;
     }
@@ -58,17 +62,26 @@ export default class AnkartonConfig {
     this.dTotal = 1;
     this.dOutput = "accounts.txt";
     this.dPasswordGenerator = null;
+    this.dLoginGenerator = null;
     this.dLogger = logger;
     this.dDelayOnDailyRateReached = 1;
     this.dDelayOnECONNREFUSED = 100;
   }
 
-  public get passwordGenerator(): (guestLogin: string, guestPassword: string) => string {
+  public get passwordGenerator(): () => string {
     return this.dPasswordGenerator;
   }
 
   public get hasPasswordGenerator(): boolean {
     return this.dPasswordGenerator != null;
+  }
+
+  public get loginGenerator(): (generatedLogin: string) => string {
+    return this.dLoginGenerator;
+  }
+
+  public get hasLoginGenerator(): boolean {
+    return this.dLoginGenerator != null;
   }
 
   public get proxyPath(): string {
