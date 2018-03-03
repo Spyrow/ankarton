@@ -1,8 +1,8 @@
+import * as delay from "delay";
 import * as https from "https";
 import * as HttpsProxyAgent from "https-proxy-agent";
 import { Client } from "mailsac";
 import * as querystring from "querystring";
-import * as logger from "winston";
 import AnkartonConfig from "./AnkartonConfig";
 import { Anticaptcha } from "./Anticaptcha";
 import { IProxy, ProxyHelpers } from "./ProxyHelpers";
@@ -35,15 +35,15 @@ export interface ICreateGuestResponse {
 }
 
 export class Dofus {
-  public static activateAccount(account: IAccount): Promise<boolean> {
+  public static activateAccount(config: AnkartonConfig, account: IAccount): Promise<boolean> {
     return new Promise(async (resolve, reject) => {
-      logger.info("Step 3/3: ACTIVATION");
+      config.logger.info("Step 3/3: ACTIVATION");
       let messages = [];
       while (messages.length === 0) {
         try {
           messages = await this.mailsac.getMessages(account.email);
         } catch (e) {
-          logger.error(e);
+          config.logger.error(e);
         }
       }
 
@@ -57,8 +57,9 @@ export class Dofus {
 
       const req = https.request({
         agent: this.httpsAgent,
+        host: "account.ankama.com",
         method: "GET",
-        path: link,
+        path: link.substring(26),
         port: 443,
       }, (response) => {
         return resolve(true);
@@ -69,6 +70,7 @@ export class Dofus {
       });
 
       req.end();
+
     });
   }
 
@@ -81,7 +83,7 @@ export class Dofus {
 
       let guest;
       do {
-        guest = await this.createGuest();
+        guest = await this.createGuest(config);
       } while (!guest);
 
       let account: IAccount;
@@ -93,14 +95,19 @@ export class Dofus {
 
       let result = false;
       do {
-        result = await this.activateAccount(account);
+        result = await this.activateAccount(config, account);
       } while (!result);
 
       return account;
 
     } catch (error) {
       if (error) {
-        logger.error(error);
+        config.logger.error(error);
+      }
+      if (error.indexOf("IP Daily Rate Reached") >= 0) {
+        if (config.hasProxyValue) {
+          throw new Error("IP Daily Rate Reached");
+        }
       }
       await this.getProxy(config);
       return this.createAccount(config);
@@ -121,19 +128,19 @@ export class Dofus {
   private static async getProxy(config: AnkartonConfig) {
     try {
       if (config.useOnlineProxy) {
-        this.proxy = await ProxyHelpers.getValidProxyOnline();
+        this.proxy = await ProxyHelpers.getValidProxyOnline(config.logger);
       } else if (config.hasProxyFile) {
-        this.proxy = await ProxyHelpers.getValidProxy();
+        this.proxy = await ProxyHelpers.getValidProxy(config.logger);
       } else if (config.hasProxyValue) {
         this.proxy = config.proxyValue;
       }
     } catch (error) {
-      logger.error(error);
+      config.logger.error(error);
       return this.getProxy(config);
     }
   }
 
-  private static bypassCaptcha(): Promise<string> {
+  private static bypassCaptcha(config: AnkartonConfig): Promise<string> {
     return new Promise(async (resolve, reject) => {
       const ac = new Anticaptcha("889c9c4191912a981f6ee6505066207b");
       // const ac = new Anticaptcha("c7119d9905032f3ba5e7b0482c76a2b3");
@@ -145,12 +152,12 @@ export class Dofus {
 
           const task = await ac.createTaskProxyless();
           const solution = await ac.getTaskSolution(task.taskId, 0, (res) => {
-            logger.verbose("intermediate", res);
+            config.logger.verbose("intermediate", res);
           });
-          logger.verbose(`SOLUTION`, solution);
+          config.logger.verbose(`SOLUTION`, solution);
           return resolve(solution.solution.gRecaptchaResponse);
         } else {
-          logger.error("AntiCaptcha - Contact DevChris#4592 on Discord :)");
+          config.logger.error("AntiCaptcha - Contact DevChris#4592 on Discord :)");
           return process.exit();
         }
       } catch (error) {
@@ -159,7 +166,7 @@ export class Dofus {
     });
   }
 
-  private static createGuest(): Promise<IGuest> {
+  private static createGuest(config: AnkartonConfig): Promise<IGuest> {
     return new Promise(async (resolve, reject) => {
       // logger.info("Step 1/3: Bypass reCaptcha...");
       // let captcha: string;
@@ -170,7 +177,7 @@ export class Dofus {
       //   return this.createGuest();
       // }
 
-      logger.info("Step 1/3: CREATION");
+      config.logger.info("Step 1/3: CREATION");
 
       const req = https.request({
         agent: this.httpsAgent,
@@ -178,8 +185,9 @@ export class Dofus {
         method: "GET",
         path: "/json/Ankama/v2/Account/CreateGuest?game=20&lang=fr",
         port: 443,
-      }, (response) => {
+      }, async (response) => {
         if (response.statusCode === 602) {
+          await delay(config.delayOnDailyRateReached);
           return reject(`IP Daily Rate Reached. (${this.httpsAgent.host}:${this.httpsAgent.port})`);
         } else if (response.statusCode === 503) {
           return reject("503 Service Unavailable");
@@ -218,7 +226,10 @@ export class Dofus {
         });
       });
 
-      req.on("error", (e) => {
+      req.on("error", async (e) => {
+        if (e.message.indexOf("ECONNREFUSED") >= 0) {
+          await delay(config.delayOnECONNREFUSED);
+        }
         return reject(e.message);
       });
 
@@ -228,11 +239,14 @@ export class Dofus {
 
   private static validateGuest(config: AnkartonConfig, guestLogin: string, guestPassword: string): Promise<IAccount> {
     return new Promise((resolve, reject) => {
-      logger.info("Step 2/3: VALIDATION");
-      const readable = readableString(8);
+      config.logger.info("Step 2/3: VALIDATION");
+      let readable = readableString(8);
       let password: string;
+      if (config.hasLoginGenerator) {
+        readable = config.loginGenerator(readable);
+      }
       if (config.hasPasswordGenerator) {
-        password = config.passwordGenerator(guestLogin, guestPassword);
+        password = config.passwordGenerator();
       } else {
         password = generatePassword(3, 2, 3);
       }

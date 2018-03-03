@@ -65,8 +65,11 @@ Ankarton.generate({
           console.log(data.login, data.password)
           resolve(data)
         },
-        passwordGenerator: (guestLogin: string, guestPassword: string): string => {
+        passwordGenerator: (): string => {
           return "myPassword123"
+        },
+        loginGenerator: (loginGenerated:string): string => {
+          return "prefix" + loginGenerated
         },
       });
 
@@ -92,8 +95,11 @@ Ankarton will write the accounts in the <output> file
 **`useOnlineProxy: boolean`**
 Ankarton will use random online proxies is <useOnlineProxy> is `true`
 
-**`passwordGenerator: (guestLogin: string, guestPassword: string)`**
-Ankarton will can <passwordGenerator> to set the password of the account <guestLogin>:<guestPassword>
+**`passwordGenerator: ()`**
+Ankarton will use <passwordGenerator> to set the password
+
+**`loginGenerator: (loginGenerated:string)`**
+Ankarton will can <loginGenerator> to set the login. It gives <loginGenerated> if the user want to add prefix, suffix or just write a new one. 
 
 
 ## Development
