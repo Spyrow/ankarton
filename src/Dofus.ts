@@ -93,10 +93,10 @@ export class Dofus {
 
       await sleep(1000);
       /*    Misuki Note :
-                - Validation doesn't work anymore (date: 07/10/18). 
-                - Validation is not required to play on Dofus Touch servers. 
+                - Validation doesn't work anymore (date: 07/10/18).
+                - Validation is not required to play on Dofus Touch servers.
       */
-     
+
       /*
        let result = false;
       do {
@@ -258,7 +258,7 @@ export class Dofus {
       }
 
       const params = {
-        email: readable + "@mailsac.com",
+        email: readable + "@gmail.com",
         lang: "fr",
         guestAccountId: id,
         guestLogin,
@@ -267,7 +267,7 @@ export class Dofus {
         password,
         nickname: readable + "nick",
       };
-
+      console.log(params);
       const paramsStr = querystring.stringify(params);
 
       const req = https.request({
@@ -302,7 +302,7 @@ export class Dofus {
           }
 
           const data = JSON.parse(str);
-          if(data.error){
+          if (data.error) {
               return reject(data.error);
           }
           if (data.text) {
