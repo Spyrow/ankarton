@@ -267,7 +267,6 @@ export class Dofus {
         password,
         nickname: readable + "nick",
       };
-      console.log(params);
       const paramsStr = querystring.stringify(params);
 
       const req = https.request({
