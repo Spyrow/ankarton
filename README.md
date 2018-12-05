@@ -1,136 +1,47 @@
 # Ankarton
 
-Ankama account's creator
+Ceci repo est un fork du projet [Ankarton](https://github.com/Spyrow/ankarton "Spyrow's Ankarton") de Spyrow. 
+Sa version étant outdated, je l'ai remise à jour. 
 
-*Ankarton can be used as an CommandLineApplication or a Library*
+# Pré-requis 
 
-## Ankarton as a Command Line Application
+Il vous faudra installer [NodeJS](https://nodejs.org/fr/ "NodeJS") pour lancer les commandes.
 
-### Installation
 
-```
-$ npm install -g ankarton
-```
-
-### Usage
+# Installation
+## En ligne de commande
 
 ```
-$ ankarton --out <accountsFile> [options]
-```
-All accounts will be created in <accountsFile>
-
-#### Options
-**`--proxy <proxyfile> `**
-Ankarton will use your file to retrieve proxies. 
-Format of the proxyfile:
-```
-proxy1:ip
-proxy2:ip
+$ git clone https://github.com/Misuki-CG/ankarton.git
+$ npm install
+$ npm run lint
+$ npm run build
 ```
 
+## Depuis l'archive
 
-**`--total <total>`**
-Number of account to create
+Il suffit simplement de se rendre dans l'onglet "release" de ce repo, de télécharger l'archive ayant "release" dans son nom et d'extraire cette archive sur votre machine. 
 
-## Ankarton as a Library
 
-### Installation
-
-```
-$ npm install --save ankarton
-```
-
-### Usage
+# Utilisation
 
 ```
-import Ankarton from 'ankarton'
-
-Ankarton.generate({
-    option1:value,
-    ...
-  });
-
+$ node CommandLine.js --out <fichierSortie> [options]
 ```
 
-### Example
-
+Tous les comptes vont être générés dans <fichierSortie> 
+Pour l'utilisation de proxy: 
 ```
-import Ankarton from 'ankarton'
-
-Ankarton.generate({
-        proxy: { 
-          host: <proxyHost>, 
-          port: <proxyIp> },
-        output: (err: any, data: any) => {
-          console.log(data.login, data.password)
-          resolve(data)
-        },
-        passwordGenerator: (): string => {
-          return "myPassword123"
-        },
-        loginGenerator: (loginGenerated:string): string => {
-          return "prefix" + loginGenerated
-        },
-      });
-
+$ node CommandLine.js --out <fichierSortie> -p ./proxy.txt
 ```
 
-### Options
+Augmenter le nombre de compte à créer :
 
-**`proxyPath: string`**
-Ankarton will read the file provided to find proxies
+```
+$ node CommandLine.js --out <fichierSortie> --total nombreCompte
+```
+Les deux en même temps :
+```
+$ node CommandLine.js --out <fichierSortie> --total nombreCompte -p ./proxy.txt
+```
 
-**`proxy: { host:string, ip:number }`**
-Ankarton will use the proxy provided
-
-**`total: number`**
-Ankarton will create <total> accounts
-
-**`output: (err: any, data: any)`**
-Ankarton will send the result in the <output> callback
-
-**`output: string`**
-Ankarton will write the accounts in the <output> file
-
-**`useOnlineProxy: boolean`**
-Ankarton will use random online proxies is <useOnlineProxy> is `true`
-
-**`passwordGenerator: ()`**
-Ankarton will use <passwordGenerator> to set the password
-
-**`loginGenerator: (loginGenerated:string)`**
-Ankarton will can <loginGenerator> to set the login. It gives <loginGenerated> if the user want to add prefix, suffix or just write a new one. 
-
-
-## Development
-
- * Prerequisites
-
-   ```
-   $ npm install
-   ```
-
-* Lint the ts files
-
-    ```
-    $ npm run lint
-    ```
-    or to fix some errors automatically
-    ```
-    $ npm run lint:fix
-    ```  
-
-
-* Build the js files
-
-    ```
-    $ npm run build
-    ```  
-
-## Contributing
-
-All contributions are welcome! If you wish to contribute, please create an issue first so that your feature, problem or question can be discussed.
-
-### Socials Links
-
-- [Discord](https://discord.gg/swU74Fm)
