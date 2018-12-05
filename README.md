@@ -1,6 +1,6 @@
 # Ankarton
 
-Ceci repo est un fork du projet [Ankarton](https://github.com/Spyrow/ankarton "Spyrow's Ankarton") de Spyrow. 
+Ceci est un fork du projet [Ankarton](https://github.com/Spyrow/ankarton "Spyrow's Ankarton") de Spyrow. 
 Sa version étant outdated, je l'ai remise à jour. 
 
 # Pré-requis 
