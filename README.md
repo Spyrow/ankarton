@@ -13,10 +13,13 @@ Il vous faudra installer [NodeJS](https://nodejs.org/fr/ "NodeJS") pour lancer l
 
 ```
 $ git clone https://github.com/Misuki-CG/ankarton.git
+$ cd ankarton/
 $ npm install
 $ npm run lint
 $ npm run build
 ```
+
+Le fichier CommandLine.js se trouvera alors dans le dossier /ankarton/dist/ .
 
 ## Depuis l'archive
 
