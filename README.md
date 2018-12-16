@@ -32,7 +32,8 @@ Il suffit simplement de se rendre dans l'onglet "release" de ce repo, de téléc
 $ node CommandLine.js --out <fichierSortie> [options]
 ```
 
-Tous les comptes vont être générés dans <fichierSortie> 
+Tous les comptes vont être générés dans \<fichierSortie\>
+
 Pour l'utilisation de proxy: 
 ```
 $ node CommandLine.js --out <fichierSortie> -p ./proxy.txt
