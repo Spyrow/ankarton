@@ -9,6 +9,11 @@ Il vous faudra installer [NodeJS](https://nodejs.org/fr/ "NodeJS") pour lancer l
 
 
 # Installation
+## Depuis l'archive
+
+Il suffit simplement de se rendre [ici](https://github.com/Misuki-CG/ankarton/releases "release"), de télécharger l'archive ayant "release" dans son nom et d'extraire cette archive sur votre machine. 
+
+
 ## En ligne de commande
 
 ```
@@ -20,10 +25,6 @@ $ npm run build
 ```
 
 Le fichier CommandLine.js se trouvera alors dans le dossier /ankarton/dist/ .
-
-## Depuis l'archive
-
-Il suffit simplement de se rendre [ici](https://github.com/Misuki-CG/ankarton/releases "release"), de télécharger l'archive ayant "release" dans son nom et d'extraire cette archive sur votre machine. 
 
 
 # Utilisation
