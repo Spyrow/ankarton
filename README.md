@@ -23,7 +23,7 @@ Le fichier CommandLine.js se trouvera alors dans le dossier /ankarton/dist/ .
 
 ## Depuis l'archive
 
-Il suffit simplement de se rendre dans l'onglet "release" de ce repo, de télécharger l'archive ayant "release" dans son nom et d'extraire cette archive sur votre machine. 
+Il suffit simplement de se rendre [ici](https://github.com/Misuki-CG/ankarton/releases "release"), de télécharger l'archive ayant "release" dans son nom et d'extraire cette archive sur votre machine. 
 
 
 # Utilisation
