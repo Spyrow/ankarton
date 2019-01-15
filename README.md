@@ -13,7 +13,7 @@ Il vous faudra installer [NodeJS](https://nodejs.org/fr/ "NodeJS") pour lancer l
 
 Il suffit simplement de se rendre [ici](https://github.com/Misuki-CG/ankarton/releases "release"), de télécharger l'archive ayant "release" dans son nom et d'extraire cette archive sur votre machine. 
 
-Le fichier **CommandLine.js** se trouve dans le dossier **distt**. 
+Le fichier **CommandLine.js** se trouve dans le dossier **dist**. 
 
 
 ## En ligne de commande
