@@ -88,15 +88,21 @@ export class Dofus {
 
       let account: IAccount;
       do {
-        account = await this.validateGuest(config, guest.data.login, guest.xpassword);
+        account = await this.validateGuest(config, guest.data.login, guest.xpassword, guest.data.id);
       } while (!account);
 
       await sleep(1000);
+      /*    Misuki Note :
+                - Validation doesn't work anymore (date: 07/10/18).
+                - Validation is not required to play on Dofus Touch servers.
+      */
 
-      let result = false;
+      /*
+       let result = false;
       do {
         result = await this.activateAccount(config, account);
       } while (!result);
+      */
 
       return account;
 
@@ -237,7 +243,7 @@ export class Dofus {
     });
   }
 
-  private static validateGuest(config: AnkartonConfig, guestLogin: string, guestPassword: string): Promise<IAccount> {
+  private static validateGuest(config: AnkartonConfig, guestLogin: string, guestPassword: string, id: string): Promise<IAccount> {
     return new Promise((resolve, reject) => {
       config.logger.info("Step 2/3: VALIDATION");
       let readable = readableString(8);
@@ -252,15 +258,15 @@ export class Dofus {
       }
 
       const params = {
-        email: readable + "@mailsac.com",
+        email: readable + "@gmail.com",
+        lang: "fr",
+        guestAccountId: id,
         guestLogin,
         guestPassword,
-        lang: "fr",
         login: readable,
-        nickname: readable + "nick",
         password,
+        nickname: readable + "nick",
       };
-
       const paramsStr = querystring.stringify(params);
 
       const req = https.request({
@@ -295,6 +301,9 @@ export class Dofus {
           }
 
           const data = JSON.parse(str);
+          if (data.error) {
+              return reject(data.error);
+          }
           if (data.text) {
             return reject(data.text);
           }
